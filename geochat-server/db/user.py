@@ -54,6 +54,13 @@ class User:
   def logout(self, token):
     session_store.delete_token(token)
 
+  @base.access_point()
+  def set_location(self, longitude, latitude, connection=base.INIT_CONNECTION):
+    c = connection.cursor()
+    c.execute('''INSERT INTO user_locations (user_id, longitude, latitude) VALUES ({user_id}, %s, %s) ON CONFLICT(user_id) DO
+      UPDATE user_locations SET (latitude, longitude)=(EXCLUDED.latitude, EXCLUDED.longitude) WHERE user_id={user_id}'''.format(user_id=self.id), (longitude, latitude))
+    return c.rowcount
+
   @staticmethod
   @base.access_point()
   def find(**kwargs):

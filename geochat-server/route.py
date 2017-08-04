@@ -23,6 +23,28 @@ def json_in(f):
     return f(*args, **kwargs)
   return wrapper
 
+class LocationEndpoint:
+  exposed = True
+  @cherrypy.tools.json_out()
+  @json_in
+  def POST(self, **kwargs):
+    try:
+      token = kwargs["auth_token"]
+      latitude = float(kwargs["latitude"])
+      longitude = float(kwargs["longitude"])
+    except:
+      cherrypy.response.status = 400
+      return
+    user = db.user.session_store.get_user(token)
+    if not user:
+      cherrypy.response.status = 403
+      return
+    if user.set_location(longitude, latitude):
+      cherrypy.response.status = 200
+      return dict(success=True)
+    else:
+      cherrypy.response.status = 500
+
 class UserEndpoint:
   exposed = True
   @cherrypy.tools.json_out()
